@@ -3,7 +3,9 @@
 export PYTHONIOENCODING=utf-8;
 
 
-HOME_DIR=`realpath ../../..`
+# make sure to call this script at `multilingual-keyphrase-generation/generator`
+
+HOME_DIR=`realpath ../`
 DATA_DIR="${HOME_DIR}/data/e-commerce"
 
 
@@ -15,11 +17,10 @@ function run_ddp_train() {
 export CUDA_VISIBLE_DEVICES="4"
 export OMP_NUM_THREADS=1
 N_GPU=1
-OUTPUT_DIR=$1
-MODEL=$2
-DATASET=$3
+MODEL=$1
+DATASET=$2
 
-OUTPUT_DIR="${HOME_dir}/models/$(date +'%Y%m%d-%H%M')_${MODEL_SHORT}_${DATASET}_checkpoints"
+OUTPUT_DIR="${HOME_DIR}/models/$(date +'%Y%m%d-%H%M')_${MODEL_SHORT}_${DATASET}_checkpoints"
 mkdir -p $OUTPUT_DIR
 
 EP=10
@@ -66,5 +67,5 @@ python -m torch.distributed.launch  --nproc_per_node ${N_GPU}  --master_port=468
 
 # DATASET=mix_de_es_fr_it
 for DATASET in mix_de_es_fr_it de_only es_only fr_only it_only; do
-    run_ddp_train ${OUTPUT_DIR} ${MODEL} ${DATASET}
+    run_ddp_train ${MODEL} ${DATASET}
 done
