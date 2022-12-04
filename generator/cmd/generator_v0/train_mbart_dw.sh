@@ -20,8 +20,8 @@ N_GPU=1
 MODEL=$1
 DATASET=$2
 
-OUTPUT_DIR="${HOME_DIR}/models/$(date +'%Y%m%d-%H%M')_${MODEL_SHORT}_${DATASET}_checkpoints"
-mkdir -p $OUTPUT_DIR
+OUTPUT_DIR="${HOME_DIR}/models/"
+mkdir -p ${OUTPUT_DIR}
 
 EP=10
 LR=1e-4
@@ -34,7 +34,7 @@ TEST="${DATA_DIR}/${DATASET}/mix.test.json"
 
 python -m torch.distributed.launch  --nproc_per_node ${N_GPU}  --master_port=4684 train_multilingual_kpgen.py \
        --predict_with_generate \
-       --output_dir=${OUTPUT_DIR}/$(date +'%Y%m%d-%H%M')_${DATASET}_checkpoints_ddp_${N_GPU}gpu_e${EP}_lr${LR}_pergpubsz${BATCH_SIZE_PER_GPU}x${GRAD_ACCUMULATION_STEPS} \
+       --output_dir=${OUTPUT_DIR}/$(date +'%Y%m%d-%H%M')_${MODEL_SHORT}_${DATASET}_checkpoints_ddp_${N_GPU}gpu_e${EP}_lr${LR}_pergpubsz${BATCH_SIZE_PER_GPU}x${GRAD_ACCUMULATION_STEPS} \
        --overwrite_output_dir \
        --do_train \
        --do_eval \
