@@ -9,13 +9,15 @@ HOME_DIR=`realpath ../`
 DATA_DIR="${HOME_DIR}/data/e-commerce"
 
 
-# MODEL=facebook/mbart-large-cc25
-MODEL=/local1/diwu/multilingual-keyphrase-generation/models/20221214-2152_mbart-large_en_only_checkpoints_ddp_1gpu_e10_lr1e-4_pergpubsz8x4
-MODEL_SHORT=mbart-large-en-mkp
+MODEL=facebook/mbart-large-50
+# MODEL=lincoln/mbart-mlsum-automatic-summarization
+MODEL_SHORT=mbart-large-50
+# MODEL_SHORT=mbart-large-en-mkp
+# MODEL_SHORT=mbart-mlsum-lincoln
 
 
 function run_ddp_train() {
-export CUDA_VISIBLE_DEVICES="5"
+export CUDA_VISIBLE_DEVICES="3"
 export OMP_NUM_THREADS=1
 N_GPU=1
 MODEL=$1
@@ -25,7 +27,7 @@ OUTPUT_DIR="${HOME_DIR}/models/"
 mkdir -p ${OUTPUT_DIR}
 
 EP=10   # 10 for small datasets
-LR=1e-4
+LR=3e-5
 BATCH_SIZE_PER_GPU=8
 GRAD_ACCUMULATION_STEPS=4   # total effective batch 32
 
@@ -66,8 +68,8 @@ python -m torch.distributed.launch  --nproc_per_node ${N_GPU}  --master_port=468
 }
 
 
-DATASET=fr_only
-#for DATASET in mix_de_es_fr_it de_only es_only fr_only it_only; do
+DATASET=it_only
 # for DATASET in mix_de_es_fr_it de_only es_only fr_only it_only; do
+# for DATASET in  it_only de_only es_only fr_only mix_de_es_fr_it; do
     run_ddp_train ${MODEL} ${DATASET}
 # done

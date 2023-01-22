@@ -9,36 +9,25 @@ HOME_DIR=`realpath ../`
 DATA_DIR="${HOME_DIR}/data/e-commerce"
 
 
-# MODEL=facebook/mbart-large-cc25
-MODEL=/local1/diwu/multilingual-keyphrase-generation/models/20221214-2152_mbart-large_en_only_checkpoints_ddp_1gpu_e10_lr1e-4_pergpubsz8x4
-MODEL_SHORT=mbart-large-en-mkp
-
-
-function run_ddp_train() {
+function run_eval() {
 export CUDA_VISIBLE_DEVICES="5"
 export OMP_NUM_THREADS=1
-N_GPU=1
 MODEL=$1
 DATASET=$2
 
-OUTPUT_DIR="${HOME_DIR}/models/"
-mkdir -p ${OUTPUT_DIR}
-
-EP=10   # 10 for small datasets
+EP=3   # 10 for small datasets
 LR=1e-4
-BATCH_SIZE_PER_GPU=8
-GRAD_ACCUMULATION_STEPS=4   # total effective batch 32
+BATCH_SIZE_PER_GPU=32
+GRAD_ACCUMULATION_STEPS=1   # total effective batch 32
 
 TRAIN="${DATA_DIR}/${DATASET}/mix.train.json"
 DEV="${DATA_DIR}/${DATASET}/mix.dev.json"
 TEST="${DATA_DIR}/${DATASET}/mix.test.json"
 
-python -m torch.distributed.launch  --nproc_per_node ${N_GPU}  --master_port=4684 train_multilingual_kpgen.py \
+python train_multilingual_kpgen.py \
        --predict_with_generate \
-       --output_dir=${OUTPUT_DIR}/$(date +'%Y%m%d-%H%M')_${MODEL_SHORT}_${DATASET}_checkpoints_ddp_${N_GPU}gpu_e${EP}_lr${LR}_pergpubsz${BATCH_SIZE_PER_GPU}x${GRAD_ACCUMULATION_STEPS} \
+       --output_dir=${OUTPUT_DIR} \
        --overwrite_output_dir \
-       --do_train \
-       --do_eval \
        --do_predict \
        --evaluation_strategy=epoch \
        --save_strategy=epoch \
@@ -56,18 +45,15 @@ python -m torch.distributed.launch  --nproc_per_node ${N_GPU}  --master_port=468
        --metric_for_best_model=eval_f1 \
        --greater_is_better=True \
        --model_name_or_path=${MODEL} \
+       --tokenizer_name="facebook/mbart-large-cc25" \
        --source_lang=ar_AR \
        --target_lang=ar_AR \
-       --train_file=${TRAIN} \
-       --validation_file=${DEV} \
        --test_file=${TEST} \
        --overwrite_cache \
        --num_beams=5
 }
 
 
-DATASET=fr_only
-#for DATASET in mix_de_es_fr_it de_only es_only fr_only it_only; do
-# for DATASET in mix_de_es_fr_it de_only es_only fr_only it_only; do
-    run_ddp_train ${MODEL} ${DATASET}
-# done
+DATASET=mix_de_es_fr_it
+OUTPUT_DIR=$1
+run_eval ${OUTPUT_DIR} ${DATASET}

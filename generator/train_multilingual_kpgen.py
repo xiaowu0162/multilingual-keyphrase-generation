@@ -38,6 +38,8 @@ from transformers import (
     HfArgumentParser,
     MBartTokenizer,
     MBartTokenizerFast,
+    MBart50Tokenizer,
+    MBart50TokenizerFast,
     Seq2SeqTrainer,
     Seq2SeqTrainingArguments,
     default_data_collator,
@@ -222,7 +224,7 @@ class KeyphraseArguments(DataTrainingArguments):
         default=False, metadata={"help": "use ground truth / retrieved english keyphrases for retrieval augmented generation"}
     )
     langs: Optional[str] = field(
-        default="de-de_DE;es-es_XX;fr-fr_XX;it-it_IT",
+        default="de-de_DE;en-en_XX;es-es_XX;fr-fr_XX;it-it_IT",
         metadata={
             "help": "languages used for multilingual setting: <kp-dataset-lang-id>-<mBART-lang-id>;"
                     "mbart: ar_AR,cs_CZ,de_DE,en_XX,es_XX,"
@@ -447,8 +449,14 @@ def main():
                 cur_lang_id = tokenizer.lang_code_to_id[cur_lang]
             else:
                 cur_lang_id = tokenizer.convert_tokens_to_ids(cur_lang)
-            model_inputs['input_ids'][i][-1] = cur_lang_id
-            labels['input_ids'][i][-1] = cur_lang_id
+            if isinstance(tokenizer, MBart50Tokenizer) or isinstance(tokenizer, MBart50TokenizerFast):
+                # MBart-50 has the lang id before the entire sequence 
+                model_inputs['input_ids'][i][0] = cur_lang_id
+                labels['input_ids'][i][0] = cur_lang_id
+            else:
+                # MBart-cc25 has the lang id after the entire sequence (and after the </s> token)
+                model_inputs['input_ids'][i][-1] = cur_lang_id
+                labels['input_ids'][i][-1] = cur_lang_id
 
         # If we are padding here, replace all tokenizer.pad_token_id in the labels by -100 when we want to ignore
         # padding in the loss.
